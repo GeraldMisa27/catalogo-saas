@@ -1,19 +1,32 @@
-import React from 'react'
-import './styles.css'
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./styles.css";
 
-export const metadata = {
-  description: 'A blank template using Payload in a Next.js app.',
-  title: 'Payload Blank Template',
-}
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
-export default async function RootLayout(props: { children: React.ReactNode }) {
-  const { children } = props
+export const metadata: Metadata = {
+  title: {
+    default: "CatálogoSaaS — Encuentra negocios cerca de ti",
+    template: "%s | CatálogoSaaS",
+  },
+  description:
+    "Encuentra restaurantes, peluquerías, bodegas y más negocios cerca de ti. Catálogos digitales con precios, fotos y contacto directo.",
+};
 
+export default function FrontendLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body>
-        <main>{children}</main>
+    <html lang="es" className={inter.variable}>
+      <body className="min-h-screen bg-gray-950 text-white">
+        {children}
       </body>
     </html>
-  )
+  );
 }
