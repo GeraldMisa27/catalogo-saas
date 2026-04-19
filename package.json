@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack --no-server-fast-refresh",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:importmap": "payload generate:importmap"
   },
   "dependencies": {
     "@payloadcms/db-mongodb": "^3.83.0",
