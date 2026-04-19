@@ -10,6 +10,7 @@ import { Zones } from "./collections/Zones";
 import { Categories } from "./collections/Categories";
 import { Articles } from "./collections/Articles";
 import { Businesses } from "./collections/Businesses";
+import { Products } from "./collections/Products";
 import { uploadthingStorage } from "@payloadcms/storage-uploadthing";
 
 const projectRoot = path.resolve(process.cwd());
@@ -28,6 +29,7 @@ export default buildConfig({
     Zones,
     Articles,
     Businesses,
+    Products,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",

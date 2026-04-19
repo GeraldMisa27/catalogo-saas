@@ -73,6 +73,7 @@ export interface Config {
     zones: Zone;
     articles: Article;
     businesses: Business;
+    products: Product;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     zones: ZonesSelect<false> | ZonesSelect<true>;
     articles: ArticlesSelect<false> | ArticlesSelect<true>;
     businesses: BusinessesSelect<false> | BusinessesSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -300,6 +302,32 @@ export interface Business {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: string;
+  name: string;
+  image?: (string | null) | Media;
+  description?: string | null;
+  /**
+   * Precio en CUP
+   */
+  price: number;
+  business: string | Business;
+  /**
+   * Ej: Entradas, Platos principales, Bebidas
+   */
+  productCategory?: string | null;
+  available?: boolean | null;
+  /**
+   * Número menor aparece primero
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -345,6 +373,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'businesses';
         value: string | Business;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: string | Product;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -498,6 +530,22 @@ export interface BusinessesSelect<T extends boolean = true> {
   schedule?: T;
   status?: T;
   owner?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  image?: T;
+  description?: T;
+  price?: T;
+  business?: T;
+  productCategory?: T;
+  available?: T;
+  order?: T;
   updatedAt?: T;
   createdAt?: T;
 }
