@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "paths": {
+      "@payload-config": ["./payload.config.ts"],
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["payload.config.ts", "collections/**/*.ts"]
+}

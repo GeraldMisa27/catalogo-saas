@@ -1,0 +1,280 @@
+// payload.config.ts
+import { mongooseAdapter } from "@payloadcms/db-mongodb";
+import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import path from "path";
+import { buildConfig } from "payload";
+import sharp from "sharp";
+
+// collections/Users.ts
+var Users = {
+  slug: "users",
+  admin: {
+    useAsTitle: "email"
+  },
+  auth: true,
+  fields: [
+    // Email added by default
+    // Add more fields as needed
+  ]
+};
+
+// collections/Media.ts
+var Media = {
+  slug: "media",
+  access: {
+    read: () => true
+  },
+  fields: [
+    {
+      name: "alt",
+      type: "text",
+      required: true
+    }
+  ],
+  upload: true
+};
+
+// collections/Zones.ts
+var Zones = {
+  slug: "zones",
+  admin: {
+    useAsTitle: "name",
+    group: "Contenido"
+  },
+  access: {
+    read: () => true
+  },
+  fields: [
+    {
+      name: "name",
+      type: "text",
+      label: "Nombre",
+      required: true
+    },
+    {
+      // Slug — se usa en la URL: /zona/centro-habana
+      name: "slug",
+      type: "text",
+      label: "Slug",
+      required: true,
+      unique: true
+    },
+    {
+      // Provincia a la que pertenece
+      name: "province",
+      type: "text",
+      label: "Provincia",
+      required: true,
+      admin: {
+        description: "Ej: La Habana, Santiago de Cuba, Villa Clara"
+      }
+    },
+    {
+      // Coordenadas del centro de la zona para el mapa
+      name: "latitude",
+      type: "number",
+      label: "Latitud"
+    },
+    {
+      name: "longitude",
+      type: "number",
+      label: "Longitud"
+    },
+    {
+      name: "description",
+      type: "textarea",
+      label: "Descripci\xF3n"
+    }
+  ]
+};
+
+// collections/Categories.ts
+var Categories = {
+  slug: "categories",
+  // Nombre en el panel de administración
+  admin: {
+    useAsTitle: "name",
+    group: "Contenido"
+  },
+  // Control de acceso — cualquiera puede leer, solo admins gestionan
+  access: {
+    read: () => true
+  },
+  fields: [
+    {
+      name: "name",
+      type: "text",
+      label: "Nombre",
+      required: true
+    },
+    {
+      // Slug — se usa en la URL: /categoria/restaurantes
+      name: "slug",
+      type: "text",
+      label: "Slug",
+      required: true,
+      unique: true,
+      admin: {
+        description: "URL amigable \u2014 ej: restaurantes, peluquerias, hoteles"
+      }
+    },
+    {
+      // Icono o emoji para mostrar en la UI
+      name: "icon",
+      type: "text",
+      label: "Icono (emoji)",
+      admin: {
+        description: "Ej: \u{1F355} \u{1F37D}\uFE0F \u{1F487} \u{1F3E8}"
+      }
+    },
+    {
+      // Imagen de portada de la categoría
+      name: "image",
+      type: "upload",
+      relationTo: "media",
+      label: "Imagen"
+    },
+    {
+      // Descripción para SEO
+      name: "description",
+      type: "textarea",
+      label: "Descripci\xF3n"
+    }
+  ]
+};
+
+// collections/Articles.ts
+var Articles = {
+  slug: "articles",
+  admin: {
+    useAsTitle: "title",
+    group: "Blog",
+    // Vista previa del artículo
+    defaultColumns: ["title", "status", "author", "publishedAt"]
+  },
+  access: {
+    // Solo artículos publicados son visibles al público
+    read: ({ req }) => {
+      if (req.user) return true;
+      return {
+        status: { equals: "published" }
+      };
+    }
+  },
+  // Versionado — permite borradores antes de publicar
+  versions: {
+    drafts: true
+  },
+  fields: [
+    {
+      name: "title",
+      type: "text",
+      label: "T\xEDtulo",
+      required: true
+    },
+    {
+      // Slug para la URL: /blog/mejores-restaurantes-habana
+      name: "slug",
+      type: "text",
+      label: "Slug",
+      required: true,
+      unique: true
+    },
+    {
+      // Imagen de portada del artículo
+      name: "coverImage",
+      type: "upload",
+      relationTo: "media",
+      label: "Imagen de portada",
+      required: true
+    },
+    {
+      // Descripción corta para SEO y cards
+      name: "excerpt",
+      type: "textarea",
+      label: "Resumen",
+      required: true,
+      admin: {
+        description: "Aparece en las cards y en los meta tags de SEO"
+      }
+    },
+    {
+      // Contenido del artículo con rich text — el valor de Payload
+      name: "content",
+      type: "richText",
+      label: "Contenido",
+      required: true
+    },
+    {
+      // Categoría relacionada — ej: artículo sobre restaurantes
+      name: "category",
+      type: "relationship",
+      relationTo: "categories",
+      label: "Categor\xEDa"
+    },
+    {
+      // Estado del artículo
+      name: "status",
+      type: "select",
+      label: "Estado",
+      defaultValue: "draft",
+      options: [
+        { label: "Borrador", value: "draft" },
+        { label: "Publicado", value: "published" }
+      ]
+    },
+    {
+      // Fecha de publicación
+      name: "publishedAt",
+      type: "date",
+      label: "Fecha de publicaci\xF3n",
+      admin: {
+        date: {
+          pickerAppearance: "dayAndTime"
+        }
+      }
+    }
+  ]
+};
+
+// payload.config.ts
+import { uploadthingStorage } from "@payloadcms/storage-uploadthing";
+var projectRoot = path.resolve(process.cwd());
+var payload_config_default = buildConfig({
+  admin: {
+    user: Users.slug,
+    importMap: {
+      baseDir: projectRoot
+    }
+  },
+  collections: [
+    Users,
+    Media,
+    Categories,
+    Zones,
+    Articles
+  ],
+  editor: lexicalEditor(),
+  secret: process.env.PAYLOAD_SECRET || "",
+  typescript: {
+    outputFile: path.resolve(projectRoot, "payload-types.ts")
+  },
+  db: mongooseAdapter({
+    url: process.env.DATABASE_URL
+  }),
+  sharp,
+  plugins: [
+    uploadthingStorage({
+      collections: {
+        media: true
+      },
+      options: {
+        token: process.env.UPLOADTHING_TOKEN,
+        acl: "public-read"
+      }
+    })
+  ]
+});
+export {
+  payload_config_default as default
+};
