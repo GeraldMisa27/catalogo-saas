@@ -1,17 +1,26 @@
 import Link from "next/link";
+import { getPayload } from "payload";
+import config from "@payload-config";
 
-// Categorías destacadas para la home
-// Luego las traeremos desde Payload
-const FEATURED_CATEGORIES = [
-  { name: "Restaurantes", slug: "restaurantes", icon: "🍽️" },
-  { name: "Cafeterías", slug: "cafeterias", icon: "☕" },
-  { name: "Peluquerías", slug: "peluquerias", icon: "💇" },
-  { name: "Bodegones", slug: "bodegones", icon: "🛒" },
-  { name: "Hoteles", slug: "hoteles", icon: "🏨" },
-  { name: "Dulcerías", slug: "dulcerias", icon: "🍰" },
-];
+// Trae las categorías desde Payload con ISR de 60 segundos
+async function getCategories() {
+  try {
+    const payload = await getPayload({ config });
+    const { docs } = await payload.find({
+      collection: "categories",
+      limit: 12,
+      sort: "name",
+    });
+    return docs;
+  } catch {
+    // Fallback si Payload falla
+    return [];
+  }
+}
 
-export default function HomePage() {
+export default async function HomePage() {
+  const categories = await getCategories();
+
   return (
     <main>
       {/* ── Hero ─────────────────────────────────────────── */}
@@ -38,24 +47,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Categorías ───────────────────────────────────── */}
+      {/* ── Categorías desde Payload ─────────────────────── */}
       <section className="px-4 py-12">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-6 text-xl font-semibold text-white">
             Explorar por categoría
           </h2>
-          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
-            {FEATURED_CATEGORIES.map((cat) => (
-              <Link
-                key={cat.slug}
-                href={`/categoria/${cat.slug}`}
-                className="flex flex-col items-center gap-2 rounded-xl bg-gray-800 p-4 text-center hover:bg-gray-700 transition-colors"
-              >
-                <span className="text-3xl">{cat.icon}</span>
-                <span className="text-sm text-gray-300">{cat.name}</span>
-              </Link>
-            ))}
-          </div>
+
+          {categories.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/categoria/${cat.slug}`}
+                  className="flex flex-col items-center gap-2 rounded-xl bg-gray-800 p-4 text-center hover:bg-gray-700 transition-colors"
+                >
+                  {/* Icono emoji si existe */}
+                  {cat.icon && (
+                    <span className="text-3xl">{cat.icon}</span>
+                  )}
+                  <span className="text-sm text-gray-300">{cat.name}</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            // Si no hay categorías aún
+            <p className="text-gray-500">
+              No hay categorías disponibles aún.
+            </p>
+          )}
         </div>
       </section>
 
@@ -65,7 +85,6 @@ export default function HomePage() {
           <h2 className="mb-6 text-xl font-semibold text-white">
             Negocios destacados
           </h2>
-          {/* Placeholder — luego conectamos con Payload */}
           <div className="grid gap-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div
