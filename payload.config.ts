@@ -10,6 +10,7 @@ import { Media } from "./collections/Media";
 import { Zones } from "./collections/Zones";
 import { Categories } from "./collections/Categories";
 import { Articles } from "./collections/Articles";
+import { uploadthingStorage } from "@payloadcms/storage-uploadthing";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -37,5 +38,15 @@ export default buildConfig({
     url: process.env.DATABASE_URL!,
   }),
   sharp,
-  plugins: [],
+  plugins: [
+    uploadthingStorage({
+      collections: {
+        media: true,
+      },
+      options: {
+        token: process.env.UPLOADTHING_TOKEN,
+        acl: "public-read",
+      },
+    }),
+  ],
 });
