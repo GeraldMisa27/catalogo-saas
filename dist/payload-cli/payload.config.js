@@ -8,6 +8,8 @@ import { Media } from "./collections/Media.js";
 import { Zones } from "./collections/Zones.js";
 import { Categories } from "./collections/Categories.js";
 import { Articles } from "./collections/Articles.js";
+import { Businesses } from "./collections/Businesses.js";
+import { Products } from "./collections/Products.js";
 import { uploadthingStorage } from "@payloadcms/storage-uploadthing";
 const projectRoot = path.resolve(process.cwd());
 export default buildConfig({
@@ -23,6 +25,8 @@ export default buildConfig({
         Categories,
         Zones,
         Articles,
+        Businesses,
+        Products,
     ],
     editor: lexicalEditor(),
     secret: process.env.PAYLOAD_SECRET || "",
