@@ -237,6 +237,168 @@ var Articles = {
   ]
 };
 
+// collections/Businesses.ts
+var Businesses = {
+  slug: "businesses",
+  admin: {
+    useAsTitle: "name",
+    group: "Negocios",
+    defaultColumns: ["name", "category", "zone", "status", "createdAt"]
+  },
+  access: {
+    // Cualquiera puede leer negocios activos
+    read: ({ req }) => {
+      if (req.user) return true;
+      return {
+        status: { equals: "active" }
+      };
+    }
+  },
+  fields: [
+    // ── Información básica ──────────────────────────────
+    {
+      name: "name",
+      type: "text",
+      label: "Nombre del negocio",
+      required: true
+    },
+    {
+      // Slug para la URL: /b/pizzeria-la-habana
+      name: "slug",
+      type: "text",
+      label: "Slug",
+      required: true,
+      unique: true,
+      admin: {
+        description: "URL del negocio \u2014 ej: pizzeria-la-habana"
+      }
+    },
+    {
+      // Logo del negocio
+      name: "logo",
+      type: "upload",
+      relationTo: "media",
+      label: "Logo"
+    },
+    {
+      // Foto de portada
+      name: "coverImage",
+      type: "upload",
+      relationTo: "media",
+      label: "Foto de portada"
+    },
+    {
+      // Descripción del negocio con rich text
+      name: "description",
+      type: "richText",
+      label: "Descripci\xF3n"
+    },
+    // ── Clasificación ───────────────────────────────────
+    {
+      // Categoría — Restaurante, Peluquería, etc.
+      name: "category",
+      type: "relationship",
+      relationTo: "categories",
+      label: "Categor\xEDa",
+      required: true
+    },
+    {
+      // Zona — Centro Habana, Vedado, etc.
+      name: "zone",
+      type: "relationship",
+      relationTo: "zones",
+      label: "Zona",
+      required: true
+    },
+    // ── Contacto ────────────────────────────────────────
+    {
+      name: "phone",
+      type: "text",
+      label: "Tel\xE9fono"
+    },
+    {
+      name: "whatsapp",
+      type: "text",
+      label: "WhatsApp"
+    },
+    {
+      name: "instagram",
+      type: "text",
+      label: "Instagram",
+      admin: {
+        description: "Solo el usuario \u2014 ej: mi_negocio"
+      }
+    },
+    {
+      name: "telegram",
+      type: "text",
+      label: "Telegram"
+    },
+    // ── Ubicación ───────────────────────────────────────
+    {
+      name: "address",
+      type: "text",
+      label: "Direcci\xF3n"
+    },
+    {
+      // Coordenadas para el mapa — Mapbox
+      name: "latitude",
+      type: "number",
+      label: "Latitud"
+    },
+    {
+      name: "longitude",
+      type: "number",
+      label: "Longitud"
+    },
+    // ── Servicios ───────────────────────────────────────
+    {
+      name: "hasDelivery",
+      type: "checkbox",
+      label: "Ofrece delivery",
+      defaultValue: false
+    },
+    {
+      name: "hasPickup",
+      type: "checkbox",
+      label: "Permite recogida",
+      defaultValue: true
+    },
+    // ── Horario ─────────────────────────────────────────
+    {
+      name: "schedule",
+      type: "textarea",
+      label: "Horario",
+      admin: {
+        description: "Ej: Lun-Vie 9am-6pm, S\xE1b 9am-2pm"
+      }
+    },
+    // ── Estado ──────────────────────────────────────────
+    {
+      name: "status",
+      type: "select",
+      label: "Estado",
+      defaultValue: "pending",
+      options: [
+        { label: "Pendiente de aprobaci\xF3n", value: "pending" },
+        { label: "Activo", value: "active" },
+        { label: "Suspendido", value: "suspended" }
+      ],
+      admin: {
+        description: "Solo el superadmin puede activar negocios"
+      }
+    },
+    // ── Dueño ───────────────────────────────────────────
+    {
+      // El usuario que gestiona este negocio
+      name: "owner",
+      type: "relationship",
+      relationTo: "users",
+      label: "Due\xF1o"
+    }
+  ]
+};
+
 // payload.config.ts
 import { uploadthingStorage } from "@payloadcms/storage-uploadthing";
 var projectRoot = path.resolve(process.cwd());
@@ -252,7 +414,8 @@ var payload_config_default = buildConfig({
     Media,
     Categories,
     Zones,
-    Articles
+    Articles,
+    Businesses
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",

@@ -69,6 +69,10 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    categories: Category;
+    zones: Zone;
+    articles: Article;
+    businesses: Business;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +82,10 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    zones: ZonesSelect<false> | ZonesSelect<true>;
+    articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    businesses: BusinessesSelect<false> | BusinessesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -149,6 +157,8 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
+  _key?: string | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -160,6 +170,133 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: string;
+  name: string;
+  /**
+   * URL amigable — ej: restaurantes, peluquerias, hoteles
+   */
+  slug: string;
+  /**
+   * Ej: 🍕 🍽️ 💇 🏨
+   */
+  icon?: string | null;
+  image?: (string | null) | Media;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "zones".
+ */
+export interface Zone {
+  id: string;
+  name: string;
+  slug: string;
+  /**
+   * Ej: La Habana, Santiago de Cuba, Villa Clara
+   */
+  province: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles".
+ */
+export interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  coverImage: string | Media;
+  /**
+   * Aparece en las cards y en los meta tags de SEO
+   */
+  excerpt: string;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  category?: (string | null) | Category;
+  status?: ('draft' | 'published') | null;
+  publishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "businesses".
+ */
+export interface Business {
+  id: string;
+  name: string;
+  /**
+   * URL del negocio — ej: pizzeria-la-habana
+   */
+  slug: string;
+  logo?: (string | null) | Media;
+  coverImage?: (string | null) | Media;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  category: string | Category;
+  zone: string | Zone;
+  phone?: string | null;
+  whatsapp?: string | null;
+  /**
+   * Solo el usuario — ej: mi_negocio
+   */
+  instagram?: string | null;
+  telegram?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  hasDelivery?: boolean | null;
+  hasPickup?: boolean | null;
+  /**
+   * Ej: Lun-Vie 9am-6pm, Sáb 9am-2pm
+   */
+  schedule?: string | null;
+  /**
+   * Solo el superadmin puede activar negocios
+   */
+  status?: ('pending' | 'active' | 'suspended') | null;
+  owner?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -192,6 +329,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: string | Category;
+      } | null)
+    | ({
+        relationTo: 'zones';
+        value: string | Zone;
+      } | null)
+    | ({
+        relationTo: 'articles';
+        value: string | Article;
+      } | null)
+    | ({
+        relationTo: 'businesses';
+        value: string | Business;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -263,6 +416,8 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  _key?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -274,6 +429,77 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  icon?: T;
+  image?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "zones_select".
+ */
+export interface ZonesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  province?: T;
+  latitude?: T;
+  longitude?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles_select".
+ */
+export interface ArticlesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  coverImage?: T;
+  excerpt?: T;
+  content?: T;
+  category?: T;
+  status?: T;
+  publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "businesses_select".
+ */
+export interface BusinessesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  logo?: T;
+  coverImage?: T;
+  description?: T;
+  category?: T;
+  zone?: T;
+  phone?: T;
+  whatsapp?: T;
+  instagram?: T;
+  telegram?: T;
+  address?: T;
+  latitude?: T;
+  longitude?: T;
+  hasDelivery?: T;
+  hasPickup?: T;
+  schedule?: T;
+  status?: T;
+  owner?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
