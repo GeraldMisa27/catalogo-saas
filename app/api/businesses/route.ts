@@ -36,7 +36,17 @@ export async function GET(req: NextRequest) {
         if (zone) where["zone.slug"] = { equals: zone };
         if (delivery === "true") where["hasDelivery"] = { equals: true };
         if (delivery === "false") where["hasPickup"] = { equals: true };
-        if (q) where["name"] = { like: q };
+        const normalizeText = (value: string) =>
+            value
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .trim();
+        const normalizedQuery = normalizeText(q);
+        const matchesQuery = (value: string) => {
+            if (!normalizedQuery) return true;
+            return normalizeText(value).includes(normalizedQuery);
+        };
 
         const businessMatchesFilters = (business: unknown) => {
             if (!business || typeof business !== "object") return false;
@@ -85,27 +95,29 @@ export async function GET(req: NextRequest) {
                 ? payload.find({
                     collection: "products",
                     where: {
-                        name: { like: q },
                         available: { equals: true },
                     },
                     depth: 2, // trae el negocio relacionado
-                    limit: 20,
+                    limit: 100,
                 })
                 : Promise.resolve({ docs: [] }),
         ]);
+        const businessesByName = businessesResult.docs.filter((business) =>
+            matchesQuery(business.name)
+        );
 
         // IDs de negocios ya encontrados directamente
-        const businessIds = new Set(businessesResult.docs.map((b) => b.id));
+        const businessIds = new Set(businessesByName.map((b) => b.id));
 
         // Negocios encontrados a través de sus productos
         const filteredProductDocs = productsResult.docs.filter((product) => {
             const business = product.business;
             if (!business || typeof business !== "object") return false;
+            if (!matchesQuery(product.name)) return false;
             return businessMatchesFilters(business);
         });
-        const normalizedQuery = q.trim().toLowerCase();
         const scoreProductByName = (name: string) => {
-            const normalizedName = name.trim().toLowerCase();
+            const normalizedName = normalizeText(name);
             if (!normalizedQuery) return 0;
             if (normalizedName === normalizedQuery) return 0;
             if (normalizedName.startsWith(normalizedQuery)) return 1;
@@ -124,7 +136,7 @@ export async function GET(req: NextRequest) {
             .map((product) => product.business);
 
         const businesses = [
-            ...businessesResult.docs,
+            ...businessesByName,
             ...businessesFromProducts,
         ];
 
