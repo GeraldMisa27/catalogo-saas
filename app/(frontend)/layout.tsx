@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: {
     default: "CatálogoSaaS — Encuentra negocios cerca de ti",
     template: "%s | CatálogoSaaS",
+    
   },
   description:
     "Encuentra restaurantes, peluquerías, bodegas y más negocios cerca de ti. Catálogos digitales con precios, fotos y contacto directo.",
@@ -30,7 +31,15 @@ export const metadata: Metadata = {
       follow: true,
       "max-image-preview": "large",
     },
+    
   },
+  manifest: "/manifest.json",
+  themeColor: "#6366f1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CatálogoSaaS",
+  }
 };
 
 export default function FrontendLayout({
