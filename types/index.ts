@@ -9,3 +9,15 @@ export type BusinessFromAPI = {
   hasDelivery?: boolean;
   hasPickup?: boolean;
 };
+
+export type ProductFromAPI = {
+  id: string;
+  name: string;
+  price: number;
+  image?: { url?: string | null } | null;
+  business: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+};

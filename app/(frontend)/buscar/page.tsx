@@ -3,7 +3,7 @@ import config from "@payload-config";
 import Link from "next/link";
 import Image from "next/image";
 import { headers } from "next/headers";
-import { BusinessFromAPI } from "@/types";
+import { BusinessFromAPI, ProductFromAPI } from "@/types";
 
 async function getCategories() {
     try {
@@ -33,7 +33,7 @@ async function getZones() {
     }
 }
 
-async function getBusinesses({
+async function getSearchResults({
     category,
     zone,
     delivery,
@@ -64,10 +64,10 @@ async function getBusinesses({
             cache: "no-store",
         });
         const { data } = await res.json();
-        return data ?? [];
+        return data ?? { businesses: [], products: [] };
     } catch (error) {
         console.error("[buscar page] getBusinesses failed", error);
-        return [];
+        return { businesses: [], products: [] };
     }
 }
 
@@ -86,11 +86,13 @@ export default async function SearchPage({
     const params = await searchParams;
     const { categoria, zona, delivery, q } = params;
 
-    const [categories, zones, businesses] = await Promise.all([
+    const [categories, zones, searchData] = await Promise.all([
         getCategories(),
         getZones(),
-        getBusinesses({ category: categoria, zone: zona, delivery, q }),
+        getSearchResults({ category: categoria, zone: zona, delivery, q }),
     ]);
+    const businesses: BusinessFromAPI[] = searchData.businesses ?? [];
+    const products: ProductFromAPI[] = searchData.products ?? [];
 
     return (
         <main className="min-h-screen px-4 py-8">
@@ -170,6 +172,44 @@ export default async function SearchPage({
                 </form>
 
                 {/* ── Resultados ─────────────────────────────────── */}
+                {q && products.length > 0 && (
+                    <section className="mb-8">
+                        <h2 className="mb-3 text-lg font-semibold text-white">
+                            Productos encontrados
+                        </h2>
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {products.map((product) => (
+                                <Link
+                                    key={product.id}
+                                    href={`/b/${product.business.slug}`}
+                                    className="flex gap-3 rounded-xl bg-gray-900 p-4 hover:bg-gray-800 transition-colors"
+                                >
+                                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800">
+                                        {product.image?.url ? (
+                                            <Image
+                                                src={product.image.url}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="64px"
+                                            />
+                                        ) : null}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-white">{product.name}</p>
+                                        <p className="text-sm text-indigo-400">
+                                            {product.price} CUP
+                                        </p>
+                                        <p className="mt-1 text-xs text-gray-400">
+                                            Negocio: {product.business.name}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
                 {businesses.length > 0 ? (
                     <>
                         <p className="mb-4 text-sm text-gray-400">
@@ -226,7 +266,9 @@ export default async function SearchPage({
                 ) : (
                     <div className="text-center py-16">
                         <p className="text-gray-400 text-lg">
-                            No se encontraron negocios con esos filtros.
+                            {q && products.length > 0
+                                ? "No se encontraron negocios con esos filtros, pero sí productos relacionados."
+                                : "No se encontraron negocios con esos filtros."}
                         </p>
                         <a
                             href="/buscar"
