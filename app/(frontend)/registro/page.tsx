@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface Category {
+  id: string;
+  name: string;
+  icon?: string;
+}
+
+interface Zone {
+  id: string;
+  name: string;
+  province: string;
+}
+
 interface RegisterForm {
-  // Datos del dueño
   ownerName: string;
   email: string;
   password: string;
-  // Datos del negocio
   businessName: string;
   slug: string;
   phone: string;
@@ -27,6 +37,8 @@ export default function RegisterPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [form, setForm] = useState<RegisterForm>({
     ownerName: "",
     email: "",
@@ -43,12 +55,30 @@ export default function RegisterPage() {
     schedule: "",
   });
 
-  // Genera el slug automáticamente desde el nombre del negocio
+  // Carga categorías y zonas desde la API de Payload
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [catRes, zoneRes] = await Promise.all([
+          fetch("/api/categories?limit=50&sort=name"),
+          fetch("/api/zones?limit=50&sort=name"),
+        ]);
+        const catData = await catRes.json();
+        const zoneData = await zoneRes.json();
+        setCategories(catData.docs ?? []);
+        setZones(zoneData.docs ?? []);
+      } catch {
+        console.error("Error cargando categorías y zonas");
+      }
+    }
+    loadData();
+  }, []);
+
   function generateSlug(name: string) {
     return name
       .toLowerCase()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // elimina acentos
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .trim();
@@ -56,17 +86,20 @@ export default function RegisterPage() {
 
   function handleBusinessNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const name = e.target.value;
-    setForm({
-      ...form,
-      businessName: name,
-      slug: generateSlug(name),
-    });
+    setForm({ ...form, businessName: name, slug: generateSlug(name) });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    // Valida categoría y zona
+    if (!form.categoryId || !form.zoneId) {
+      setError("Debes elegir categoría y zona");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/register", {
@@ -82,7 +115,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // Redirige a una página de éxito
       router.push("/registro/exitoso");
     } catch {
       setError("Error de conexión. Inténtalo de nuevo.");
@@ -173,6 +205,8 @@ export default function RegisterPage() {
               >
                 Siguiente →
               </button>
+
+              {error && <p className="text-sm text-red-400">{error}</p>}
             </>
           )}
 
@@ -196,10 +230,48 @@ export default function RegisterPage() {
                   className="rounded-xl bg-gray-800 px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 {form.slug && (
-                  <p className="text-xs text-gray-500">
-                    URL: /b/{form.slug}
-                  </p>
+                  <p className="text-xs text-gray-500">URL: /b/{form.slug}</p>
                 )}
+              </div>
+
+              {/* Categoría */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-gray-400 uppercase tracking-widest">
+                  Categoría *
+                </label>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                  required
+                  className="rounded-xl bg-gray-800 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Zona */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-gray-400 uppercase tracking-widest">
+                  Zona *
+                </label>
+                <select
+                  value={form.zoneId}
+                  onChange={(e) => setForm({ ...form, zoneId: e.target.value })}
+                  required
+                  className="rounded-xl bg-gray-800 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Selecciona una zona</option>
+                  {zones.map((zone) => (
+                    <option key={zone.id} value={zone.id}>
+                      {zone.name} — {zone.province}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -241,7 +313,6 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Servicios */}
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -263,9 +334,7 @@ export default function RegisterPage() {
                 </label>
               </div>
 
-              {error && (
-                <p className="text-sm text-red-400">{error}</p>
-              )}
+              {error && <p className="text-sm text-red-400">{error}</p>}
 
               <div className="flex gap-3">
                 <button
