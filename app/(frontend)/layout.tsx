@@ -16,7 +16,21 @@ export const metadata: Metadata = {
     template: "%s | CatálogoSaaS",
   },
   description:
-    "Encuentra restaurantes, peluquerías, bodegas y más negocios cerca de ti.",
+    "Encuentra restaurantes, peluquerías, bodegas y más negocios cerca de ti. Catálogos digitales con precios, fotos y contacto directo.",
+  openGraph: {
+    type: "website",
+    locale: "es_CU",
+    siteName: "CatálogoSaaS",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+    },
+  },
 };
 
 export default function FrontendLayout({
