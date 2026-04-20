@@ -1,4 +1,5 @@
 import { getPayload } from "payload";
+import type { Where } from "payload";
 import config from "@payload-config";
 import { redis } from "@/lib/redis";
 import { NextRequest } from "next/server";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
         const payload = await getPayload({ config });
 
         // Filtros base para negocios
-        const where: Record<string, unknown> = {
+        const where: Where = {
             status: { equals: "active" },
         };
 
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
         const [businessesResult, productsResult] = await Promise.all([
             payload.find({
                 collection: "businesses",
+                where,
                 depth: 2,
                 limit: 24,
                 sort: "name",

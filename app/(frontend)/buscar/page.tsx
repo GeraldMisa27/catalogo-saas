@@ -50,10 +50,10 @@ async function getBusinesses({
         if (delivery) params.set("delivery", delivery);
         if (q) params.set("q", q);
 
-        const res = await fetch(
-            `${process.env.NEXT_PUBLIC_SITE_URL}/api/businesses?${params.toString()}`,
-            { cache: "no-store" }
-        );
+        const query = params.toString();
+        const res = await fetch(`/api/businesses${query ? `?${query}` : ""}`, {
+            cache: "no-store",
+        });
         const { data } = await res.json();
         return data ?? [];
     } catch {
