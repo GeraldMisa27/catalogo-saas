@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -10,14 +10,17 @@ const inter = Inter({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#6366f1",
+};
+
 export const metadata: Metadata = {
   title: {
     default: "CatálogoSaaS — Encuentra negocios cerca de ti",
     template: "%s | CatálogoSaaS",
-    
   },
   description:
-    "Encuentra restaurantes, peluquerías, bodegas y más negocios cerca de ti. Catálogos digitales con precios, fotos y contacto directo.",
+    "Encuentra restaurantes, peluquerías, bodegas y más negocios cerca de ti.",
   openGraph: {
     type: "website",
     locale: "es_CU",
@@ -31,15 +34,13 @@ export const metadata: Metadata = {
       follow: true,
       "max-image-preview": "large",
     },
-    
   },
   manifest: "/manifest.json",
-  themeColor: "#6366f1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "CatálogoSaaS",
-  }
+  },
 };
 
 export default function FrontendLayout({

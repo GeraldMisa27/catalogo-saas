@@ -54,25 +54,24 @@ export default async function HomePage() {
           fotos y contacto directo.
         </p>
 
-        <div className="mx-auto mt-8 flex max-w-lg gap-2">
+        <form
+          action="/buscar"
+          method="GET"
+          className="mx-auto mt-8 flex max-w-lg gap-2"
+        >
           <input
             type="text"
-            id="search-input"
+            name="q"
             placeholder="¿Qué estás buscando?"
             className="flex-1 rounded-xl bg-gray-800 px-4 py-3 text-white placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
           />
-          <Link
-            href="/buscar"
-            onClick={(e) => {
-              e.preventDefault();
-              const input = document.getElementById("search-input") as HTMLInputElement;
-              window.location.href = `/buscar?q=${encodeURIComponent(input.value)}`;
-            }}
+          <button
+            type="submit"
             className="rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-500 transition-colors"
           >
             Buscar
-          </Link>
-        </div>
+          </button>
+        </form>
       </section>
 
       {/* ── Categorías ───────────────────────────────────── */}
