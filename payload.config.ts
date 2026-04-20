@@ -52,7 +52,7 @@ export default buildConfig({
     }),
   ],
   graphQL: {
-    schemaOutputFile: path.resolve(__dirname, "generated-schema.graphql"),
+    schemaOutputFile: path.resolve(projectRoot, "generated-schema.graphql"),
     disablePlaygroundInProduction: false, // habilita el playground
   },
 });

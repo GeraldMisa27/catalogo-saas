@@ -111,15 +111,32 @@ export const Businesses: CollectionConfig = {
       label: "Dirección",
     },
     {
-      // Coordenadas para el mapa — Mapbox
+      // Campo custom que muestra el mapa interactivo
+      // El dueño hace clic y las coordenadas se guardan automáticamente
+      name: "locationPicker",
+      type: "ui",
+      admin: {
+        components: {
+          Field: "@/components/payload/LocationPicker",
+        },
+      },
+    },
+    {
       name: "latitude",
       type: "number",
       label: "Latitud",
+      admin: {
+        // Oculta el campo — se llena automáticamente desde el mapa
+        readOnly: true,
+      },
     },
     {
       name: "longitude",
       type: "number",
       label: "Longitud",
+      admin: {
+        readOnly: true,
+      },
     },
 
     // ── Servicios ───────────────────────────────────────
