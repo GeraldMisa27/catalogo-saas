@@ -2,6 +2,7 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import BusinessMap from "@/components/BusinessMap";
 
 // Trae el negocio por su slug
 async function getBusiness(slug: string) {
@@ -212,7 +213,24 @@ export default async function BusinessPage({
                         </p>
                     )}
                 </div>
-
+                {/* ── Mapa ─────────────────────────────────────────── */}
+                {business.latitude && business.longitude && (
+                    <div className="mb-8">
+                        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-3">
+                            Ubicación
+                        </h2>
+                        <BusinessMap
+                            latitude={business.latitude}
+                            longitude={business.longitude}
+                            name={business.name}
+                        />
+                        {business.address && (
+                            <p className="text-sm text-gray-400 mt-2">
+                                📍 {business.address}
+                            </p>
+                        )}
+                    </div>
+                )}
                 {/* ── Productos ────────────────────────────────────── */}
                 {products.length > 0 ? (
                     <div>
