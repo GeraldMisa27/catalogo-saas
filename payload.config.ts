@@ -45,6 +45,9 @@ export default buildConfig({
   sharp,
   plugins: [
     uploadthingStorage({
+      // En Vercel el cuerpo de la petición al servidor está limitado (~4.5MB);
+      // las subidas van al cliente → UploadThing y luego se registra el doc en Payload.
+      clientUploads: true,
       collections: {
         media: true,
       },
