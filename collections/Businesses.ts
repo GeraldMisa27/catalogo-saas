@@ -1,4 +1,24 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, CollectionAfterChangeHook } from "payload";
+
+// Hook que invalida el caché cuando un negocio se actualiza
+const revalidateBusinessCache: CollectionAfterChangeHook = async ({ doc }) => {
+  try {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/revalidate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secret: process.env.REVALIDATE_SECRET,
+          collection: "businesses",
+          slug: doc.slug,
+        }),
+      }
+    );
+  } catch (err) {
+    console.error("[revalidate hook]", err);
+  }
+};
 
 // Negocios — restaurantes, peluquerías, bodegas, etc.
 // Cada negocio es un tenant de la plataforma
@@ -19,6 +39,10 @@ export const Businesses: CollectionConfig = {
         status: { equals: "active" },
       };
     },
+  },
+
+  hooks: {
+    afterChange: [revalidateBusinessCache],
   },
 
   fields: [

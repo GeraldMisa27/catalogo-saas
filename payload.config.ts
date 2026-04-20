@@ -13,7 +13,10 @@ import { Businesses } from "./collections/Businesses";
 import { Products } from "./collections/Products";
 import { uploadthingStorage } from "@payloadcms/storage-uploadthing";
 
+// Hook que invalida el caché cuando un negocio se actualiza
+
 const projectRoot = path.resolve(process.cwd());
+
 
 export default buildConfig({
   admin: {
@@ -55,4 +58,5 @@ export default buildConfig({
     schemaOutputFile: path.resolve(projectRoot, "generated-schema.graphql"),
     disablePlaygroundInProduction: false, // habilita el playground
   },
+  
 });
