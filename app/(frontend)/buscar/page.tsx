@@ -2,6 +2,7 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import Link from "next/link";
 import Image from "next/image";
+import { headers } from "next/headers";
 import { BusinessFromAPI } from "@/types";
 
 async function getCategories() {
@@ -51,12 +52,21 @@ async function getBusinesses({
         if (q) params.set("q", q);
 
         const query = params.toString();
-        const res = await fetch(`/api/businesses${query ? `?${query}` : ""}`, {
+        const requestHeaders = await headers();
+        const host =
+            requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+        const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
+        const baseURL = host
+            ? `${protocol}://${host}`
+            : (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+
+        const res = await fetch(`${baseURL}/api/businesses${query ? `?${query}` : ""}`, {
             cache: "no-store",
         });
         const { data } = await res.json();
         return data ?? [];
-    } catch {
+    } catch (error) {
+        console.error("[buscar page] getBusinesses failed", error);
         return [];
     }
 }
