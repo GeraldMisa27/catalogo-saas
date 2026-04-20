@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     if (category) where["category.slug"] = { equals: category };
     if (zone) where["zone.slug"] = { equals: zone };
     if (delivery === "true") where["hasDelivery"] = { equals: true };
-    if (q) where["name"] = { like: q };
+    if (q) where["name"] = { contains: q };
 
     // Busca negocios en paralelo con productos
     const [businessesResult, productsResult] = await Promise.all([
