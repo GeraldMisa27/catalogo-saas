@@ -64,10 +64,22 @@ async function getSearchResults({
             cache: "no-store",
         });
         const { data } = await res.json();
-        return data ?? { businesses: [], products: [] };
+        return (
+            data ?? {
+                businesses: [],
+                products: [],
+                relatedBusinesses: [],
+                relatedProducts: [],
+            }
+        );
     } catch (error) {
         console.error("[buscar page] getBusinesses failed", error);
-        return { businesses: [], products: [] };
+        return {
+            businesses: [],
+            products: [],
+            relatedBusinesses: [],
+            relatedProducts: [],
+        };
     }
 }
 
@@ -93,6 +105,11 @@ export default async function SearchPage({
     ]);
     const businesses: BusinessFromAPI[] = searchData.businesses ?? [];
     const products: ProductFromAPI[] = searchData.products ?? [];
+    const relatedBusinesses: BusinessFromAPI[] =
+        searchData.relatedBusinesses ?? [];
+    const relatedProducts: ProductFromAPI[] = searchData.relatedProducts ?? [];
+    const hasRelated =
+        relatedBusinesses.length > 0 || relatedProducts.length > 0;
 
     return (
         <main className="min-h-screen px-4 py-8">
@@ -210,6 +227,99 @@ export default async function SearchPage({
                     </section>
                 )}
 
+                {q &&
+                    businesses.length === 0 &&
+                    products.length === 0 &&
+                    hasRelated && (
+                        <section className="mb-10">
+                            <p className="mb-4 text-sm text-amber-200/90">
+                                No hay coincidencias exactas con &quot;{q}&quot;.
+                                Esto es lo más parecido a tu búsqueda:
+                            </p>
+                            {relatedProducts.length > 0 && (
+                                <div className="mb-8">
+                                    <h2 className="mb-3 text-lg font-semibold text-white">
+                                        Productos relacionados
+                                    </h2>
+                                    <div className="grid gap-3 md:grid-cols-2">
+                                        {relatedProducts.map((product) => (
+                                            <Link
+                                                key={`rel-${product.id}`}
+                                                href={`/b/${product.business.slug}`}
+                                                className="flex gap-3 rounded-xl bg-gray-900/90 p-4 ring-1 ring-amber-500/20 hover:bg-gray-800 transition-colors"
+                                            >
+                                                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-800">
+                                                    {product.image?.url ? (
+                                                        <Image
+                                                            src={product.image.url}
+                                                            alt={product.name}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="64px"
+                                                        />
+                                                    ) : null}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-white">
+                                                        {product.name}
+                                                    </p>
+                                                    <p className="text-sm text-indigo-400">
+                                                        {product.price} CUP
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-gray-400">
+                                                        Negocio: {product.business.name}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {relatedBusinesses.length > 0 && (
+                                <div>
+                                    <h2 className="mb-3 text-lg font-semibold text-white">
+                                        Negocios relacionados
+                                    </h2>
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        {relatedBusinesses.map(
+                                            (business: BusinessFromAPI) => (
+                                                <Link
+                                                    key={`rel-b-${business.id}`}
+                                                    href={`/b/${business.slug}`}
+                                                    className="group overflow-hidden rounded-xl bg-gray-900/90 ring-1 ring-amber-500/20 hover:bg-gray-800 transition-colors"
+                                                >
+                                                    <div className="relative h-36 bg-gray-800">
+                                                        {business.coverImage?.url && (
+                                                            <Image
+                                                                src={business.coverImage.url}
+                                                                alt={business.name}
+                                                                fill
+                                                                className="object-cover"
+                                                                sizes="(max-width: 768px) 100vw, 33vw"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    <div className="p-4">
+                                                        <h3 className="font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                                                            {business.name}
+                                                        </h3>
+                                                        {business.category?.name && (
+                                                            <p className="mt-1 text-xs text-indigo-400">
+                                                                {business.category.name}
+                                                                {business.zone?.name &&
+                                                                    ` · ${business.zone.name}`}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </Link>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    )}
+
                 {businesses.length > 0 ? (
                     <>
                         <p className="mb-4 text-sm text-gray-400">
@@ -264,19 +374,26 @@ export default async function SearchPage({
                         </div>
                     </>
                 ) : (
-                    <div className="text-center py-16">
-                        <p className="text-gray-400 text-lg">
-                            {q && products.length > 0
-                                ? "No se encontraron negocios con esos filtros, pero sí productos relacionados."
-                                : "No se encontraron negocios con esos filtros."}
-                        </p>
-                        <a
-                            href="/buscar"
-                            className="mt-4 inline-block text-indigo-400 hover:text-indigo-300"
-                        >
-                            Ver todos los negocios
-                        </a>
-                    </div>
+                    !(
+                        q &&
+                        businesses.length === 0 &&
+                        products.length === 0 &&
+                        hasRelated
+                    ) && (
+                        <div className="py-16 text-center">
+                            <p className="text-lg text-gray-400">
+                                {q && products.length > 0
+                                    ? "No se encontraron negocios con esos filtros, pero sí productos relacionados."
+                                    : "No se encontraron negocios con esos filtros."}
+                            </p>
+                            <a
+                                href="/buscar"
+                                className="mt-4 inline-block text-indigo-400 hover:text-indigo-300"
+                            >
+                                Ver todos los negocios
+                            </a>
+                        </div>
+                    )
                 )}
             </div>
         </main>

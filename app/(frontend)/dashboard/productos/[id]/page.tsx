@@ -54,7 +54,7 @@ export default async function EditProductPage({
     product = await payload.findByID({
       collection: "products",
       id,
-      depth: 0,
+      depth: 1,
     });
   } catch {
     notFound();
@@ -71,6 +71,12 @@ export default async function EditProductPage({
     notFound();
   }
 
+  const img = product.image;
+  const imageUrl =
+    typeof img === "object" && img !== null && "url" in img
+      ? ((img as { url?: string | null }).url ?? null)
+      : null;
+
   return (
     <EditProductForm
       productId={id}
@@ -82,6 +88,7 @@ export default async function EditProductPage({
         available: product.available ?? true,
         order: String(product.order ?? 0),
       }}
+      initialImageUrl={imageUrl}
     />
   );
 }

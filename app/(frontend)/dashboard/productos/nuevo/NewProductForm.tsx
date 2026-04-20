@@ -4,37 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadMediaForProduct } from "@/lib/uploadMediaClient";
 
-type InitialForm = {
-  name: string;
-  description: string;
-  price: string;
-  productCategory: string;
-  available: boolean;
-  order: string;
-};
-
-export default function EditProductForm({
-  productId,
-  initial,
-  initialImageUrl,
-}: {
-  productId: string;
-  initial: InitialForm;
-  initialImageUrl: string | null;
-}) {
+export default function NewProductForm({ businessId }: { businessId: string }) {
   const router = useRouter();
-  const [form, setForm] = useState<InitialForm>(initial);
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    productCategory: "",
+    available: true,
+    order: "0",
+  });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [removeImage, setRemoveImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const displayUrl = imagePreview ?? (!removeImage ? initialImageUrl : null);
-
   function onImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    setRemoveImage(false);
     if (!file) {
       setImageFile(null);
       setImagePreview(null);
@@ -50,43 +36,41 @@ export default function EditProductForm({
     setError("");
 
     try {
-      let image: string | null | undefined;
-
+      let imageId: string | undefined;
       if (imageFile) {
         const alt = form.name.trim() || "Producto";
-        image = await uploadMediaForProduct(imageFile, alt);
-      } else if (removeImage) {
-        image = null;
+        imageId = await uploadMediaForProduct(imageFile, alt);
       }
 
-      const payload: Record<string, unknown> = {
+      const body: Record<string, unknown> = {
         ...form,
         price: Number(form.price),
         order: Number(form.order),
+        business: businessId,
       };
-      if (image !== undefined) {
-        payload.image = image;
-      }
+      if (imageId) body.image = imageId;
 
-      const res = await fetch(`/api/products/${productId}`, {
-        method: "PATCH",
+      const res = await fetch("/api/products", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(
           (data as { errors?: { message?: string }[] }).errors?.[0]?.message ??
-            "Error al actualizar el producto"
+            "Error al crear el producto"
         );
         return;
       }
 
       router.push("/dashboard");
-    } catch {
-      setError("Error de conexión. Inténtalo de nuevo.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error de conexión. Inténtalo de nuevo."
+      );
     } finally {
       setLoading(false);
     }
@@ -95,7 +79,7 @@ export default function EditProductForm({
   return (
     <main className="min-h-screen px-4 py-8">
       <div className="mx-auto max-w-lg">
-        <h1 className="mb-6 text-2xl font-bold text-white">Editar producto</h1>
+        <h1 className="mb-6 text-2xl font-bold text-white">Añadir producto</h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -108,29 +92,15 @@ export default function EditProductForm({
               onChange={onImageChange}
               className="text-sm text-gray-300 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-indigo-500"
             />
-            {initialImageUrl && !imageFile && (
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-400">
-                <input
-                  type="checkbox"
-                  checked={removeImage}
-                  onChange={(e) => {
-                    setRemoveImage(e.target.checked);
-                    if (e.target.checked) {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }
-                  }}
-                  className="accent-indigo-500"
-                />
-                Quitar imagen actual
-              </label>
-            )}
-            {displayUrl && (
+            <p className="text-xs text-gray-500">
+              Opcional. Formatos de imagen habituales (JPG, PNG, WebP).
+            </p>
+            {imagePreview && (
               <div className="relative mt-2 aspect-video w-full max-h-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={displayUrl}
-                  alt=""
+                  src={imagePreview}
+                  alt="Vista previa"
                   className="h-full w-full object-contain"
                 />
               </div>
@@ -238,7 +208,7 @@ export default function EditProductForm({
               disabled={loading}
               className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
             >
-              {loading ? "Guardando..." : "Guardar cambios"}
+              {loading ? "Guardando..." : "Guardar producto"}
             </button>
           </div>
         </form>

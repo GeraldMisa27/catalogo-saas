@@ -2,6 +2,7 @@ import { getPayload } from "payload";
 import type { Where } from "payload";
 import config from "@payload-config";
 import { redis } from "@/lib/redis";
+import { normalizeForSearch, relatednessScore } from "@/lib/searchRelated";
 import { NextRequest } from "next/server";
 
 const CACHE_TTL = 300;
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     // Con búsqueda por texto no usamos caché — resultados muy variados
     const useCache = !q;
-    const cacheKey = `search:v2:${category}:${zone}:${delivery}`;
+    const cacheKey = `search:v3:${category}:${zone}:${delivery}`;
 
     try {
         if (useCache) {
@@ -36,16 +37,10 @@ export async function GET(req: NextRequest) {
         if (zone) where["zone.slug"] = { equals: zone };
         if (delivery === "true") where["hasDelivery"] = { equals: true };
         if (delivery === "false") where["hasPickup"] = { equals: true };
-        const normalizeText = (value: string) =>
-            value
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .toLowerCase()
-                .trim();
-        const normalizedQuery = normalizeText(q);
+        const normalizedQuery = normalizeForSearch(q);
         const matchesQuery = (value: string) => {
             if (!normalizedQuery) return true;
-            return normalizeText(value).includes(normalizedQuery);
+            return normalizeForSearch(value).includes(normalizedQuery);
         };
 
         const businessMatchesFilters = (business: unknown) => {
@@ -117,7 +112,7 @@ export async function GET(req: NextRequest) {
             return businessMatchesFilters(business);
         });
         const scoreProductByName = (name: string) => {
-            const normalizedName = normalizeText(name);
+            const normalizedName = normalizeForSearch(name);
             if (!normalizedQuery) return 0;
             if (normalizedName === normalizedQuery) return 0;
             if (normalizedName.startsWith(normalizedQuery)) return 1;
@@ -171,9 +166,83 @@ export async function GET(req: NextRequest) {
             })
             .filter(Boolean);
 
+        const MIN_RELATED_SCORE = 0.22;
+        const MAX_RELATED = 8;
+
+        let relatedBusinesses: typeof businessesResult.docs = [];
+        let relatedProducts: NonNullable<(typeof products)[number]>[] = [];
+
+        if (
+            normalizedQuery.length >= 2 &&
+            businesses.length === 0 &&
+            products.length === 0
+        ) {
+            relatedBusinesses = businessesResult.docs
+                .map((b) => ({
+                    doc: b,
+                    score: relatednessScore(q, b.name),
+                }))
+                .filter((x) => x.score >= MIN_RELATED_SCORE)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, MAX_RELATED)
+                .map((x) => x.doc);
+
+            const productCandidates = productsResult.docs.filter((product) => {
+                const business = product.business;
+                if (!business || typeof business !== "object") return false;
+                return businessMatchesFilters(business);
+            });
+
+            relatedProducts = productCandidates
+                .map((product) => {
+                    const desc =
+                        typeof product.description === "string"
+                            ? product.description
+                            : "";
+                    const score = Math.max(
+                        relatednessScore(q, product.name),
+                        desc ? relatednessScore(q, desc) : 0
+                    );
+                    return { product, score };
+                })
+                .filter((x) => x.score >= MIN_RELATED_SCORE)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, MAX_RELATED)
+                .map((x) => {
+                    const product = x.product;
+                    const business = product.business;
+                    if (!business || typeof business !== "object") return null;
+                    const b = business as {
+                        id: string;
+                        name?: string;
+                        slug?: string;
+                    };
+                    if (!b.id || !b.name || !b.slug) return null;
+                    return {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        image:
+                            product.image && typeof product.image === "object"
+                                ? { url: product.image.url ?? null }
+                                : null,
+                        business: {
+                            id: b.id,
+                            name: b.name,
+                            slug: b.slug,
+                        },
+                    };
+                })
+                .filter(Boolean) as NonNullable<(typeof products)[number]>[];
+        }
+
         const responseData = {
             businesses,
             products,
+            ...(relatedBusinesses.length > 0 && {
+                relatedBusinesses,
+            }),
+            ...(relatedProducts.length > 0 && { relatedProducts }),
         };
 
         if (useCache) {
