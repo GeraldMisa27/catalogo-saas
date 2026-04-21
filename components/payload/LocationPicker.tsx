@@ -22,8 +22,23 @@ export default function LocationPicker() {
     lat && lng ? { lat, lng } : null
   );
 
+  const setLatRef = useRef(setLat);
+  const setLngRef = useRef(setLng);
+
+  useEffect(() => {
+    setLatRef.current = setLat;
+    setLngRef.current = setLng;
+  }, [setLat, setLng]);
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
+
+    const initial =
+      coords &&
+      typeof coords.lat === "number" &&
+      typeof coords.lng === "number"
+        ? coords
+        : null;
 
     // Usa OpenStreetMap — gratuito sin API key
     const map = new maplibregl.Map({
@@ -46,16 +61,16 @@ export default function LocationPicker() {
           },
         ],
       },
-      center: coords ? [coords.lng, coords.lat] : DEFAULT_CENTER,
-      zoom: coords ? 15 : DEFAULT_ZOOM,
+      center: initial ? [initial.lng, initial.lat] : DEFAULT_CENTER,
+      zoom: initial ? 15 : DEFAULT_ZOOM,
     });
 
     map.addControl(new maplibregl.NavigationControl(), "bottom-right");
 
     // Si ya hay coordenadas guardadas — muestra el marcador
-    if (coords) {
+    if (initial) {
       markerRef.current = new maplibregl.Marker({ color: "#6366f1" })
-        .setLngLat([coords.lng, coords.lat])
+        .setLngLat([initial.lng, initial.lat])
         .addTo(map);
     }
 
@@ -73,8 +88,8 @@ export default function LocationPicker() {
       }
 
       // Guarda en los campos de Payload automáticamente
-      setLat(lat);
-      setLng(lng);
+      setLatRef.current(lat);
+      setLngRef.current(lng);
       setCoords({ lat, lng });
     });
 
@@ -84,6 +99,9 @@ export default function LocationPicker() {
       map.remove();
       mapRef.current = null;
     };
+    // MapLibre: una sola inicialización. coords solo fija centro/marcador del primer pintado;
+    // los setters de Payload van por ref para no re-suscribir el efecto al hacer clic.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only map setup
   }, []);
 
   return (
