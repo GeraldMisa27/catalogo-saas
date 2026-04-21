@@ -49,7 +49,10 @@ export default buildConfig({
       // las subidas van al cliente → UploadThing y luego se registra el doc en Payload.
       clientUploads: true,
       collections: {
-        media: true,
+        // Expone URLs públicas https://utfs.io/f/... en el campo `url` (afterRead).
+        // Sin esto, `url` suele ser /api/media/file/... y `next/image` (/_next/image)
+        // puede devolver 404 al optimizar en Vercel.
+        media: { disablePayloadAccessControl: true },
       },
       options: {
         token: process.env.UPLOADTHING_TOKEN,
