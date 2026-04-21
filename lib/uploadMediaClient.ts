@@ -1,14 +1,9 @@
 "use client";
 
-export async function uploadMediaForProduct(
-  file: File,
-  alt: string
-): Promise<string> {
-  const altText = alt.trim() || "Imagen de producto";
-
+async function createMediaDoc(file: File, altText: string): Promise<string> {
   const formData = new FormData();
   formData.append("_payload", JSON.stringify({ alt: altText }));
-  formData.append("file", file, file.name);
+  formData.append("file", file, file.name); // archivo real
 
   const res = await fetch("/api/media", {
     method: "POST",
@@ -19,13 +14,16 @@ export async function uploadMediaForProduct(
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     const d = data as { errors?: { message?: string }[]; message?: string };
-    throw new Error(
-      d.errors?.[0]?.message ?? d.message ?? "Error al subir la imagen"
-    );
+    throw new Error(d.errors?.[0]?.message ?? d.message ?? "Error al subir");
   }
 
-  const data = (await res.json()) as { doc?: { id: string }; id?: string };
+  const data = await res.json() as { doc?: { id: string }; id?: string };
   const id = data.doc?.id ?? data.id;
-  if (!id) throw new Error("Respuesta inválida al crear el medio");
+  if (!id) throw new Error("Respuesta inválida");
   return id;
+}
+
+export async function uploadMediaForProduct(file: File, alt: string): Promise<string> {
+  const altText = alt.trim() || "Imagen de producto";
+  return createMediaDoc(file, altText);
 }
