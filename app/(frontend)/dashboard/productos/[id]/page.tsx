@@ -1,7 +1,8 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { getMediaDisplayUrl } from "@/lib/mediaUrl";
 import EditProductForm from "./EditProductForm";
 
 export const dynamic = "force-dynamic";
@@ -71,11 +72,28 @@ export default async function EditProductPage({
     notFound();
   }
 
-  const img = product.image;
-  const imageUrl =
-    typeof img === "object" && img !== null && "url" in img
-      ? ((img as { url?: string | null }).url ?? null)
-      : null;
+  const headersList = await headers();
+  const host =
+    headersList.get("x-forwarded-host") ?? headersList.get("host") ?? "";
+  const proto = headersList.get("x-forwarded-proto") ?? "https";
+  const siteOrigin =
+    host ?
+      `${proto}://${host}`
+    : (process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "");
+
+  let imageUrl = getMediaDisplayUrl(product.image, siteOrigin);
+  if (!imageUrl && typeof product.image === "string") {
+    try {
+      const mediaDoc = await payload.findByID({
+        collection: "media",
+        id: product.image,
+        depth: 0,
+      });
+      imageUrl = getMediaDisplayUrl(mediaDoc, siteOrigin);
+    } catch {
+      imageUrl = null;
+    }
+  }
 
   return (
     <EditProductForm

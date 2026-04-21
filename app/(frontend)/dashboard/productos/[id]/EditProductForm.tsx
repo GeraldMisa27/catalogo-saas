@@ -132,6 +132,7 @@ export default function EditProductForm({
                   src={displayUrl}
                   alt=""
                   className="h-full w-full object-contain"
+                  referrerPolicy="no-referrer"
                 />
               </div>
             )}
