@@ -1,11 +1,29 @@
 import { getPayload } from "payload";
 import type { Where } from "payload";
 import config from "@payload-config";
+import { getMediaDisplayUrl } from "@/lib/mediaUrl";
 import { redis } from "@/lib/redis";
 import { normalizeForSearch, relatednessScore } from "@/lib/searchRelated";
 import { NextRequest } from "next/server";
 
 const CACHE_TTL = 300;
+
+function siteOriginFromRequest(req: NextRequest): string {
+    const proto = req.headers.get("x-forwarded-proto") ?? "https";
+    const host =
+        req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+    if (host) return `${proto}://${host}`;
+    return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+}
+
+function jsonImage(media: unknown, siteOrigin: string): { url: string } | null {
+    const url = getMediaDisplayUrl(media, siteOrigin);
+    return url ? { url } : null;
+}
+
+function jsonCover(cover: unknown, siteOrigin: string): { url: string } | null {
+    return jsonImage(cover, siteOrigin);
+}
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -16,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     // Con búsqueda por texto no usamos caché — resultados muy variados
     const useCache = !q;
-    const cacheKey = `search:v3:${category}:${zone}:${delivery}`;
+    const cacheKey = `search:v4:${category}:${zone}:${delivery}`;
 
     try {
         if (useCache) {
@@ -27,6 +45,7 @@ export async function GET(req: NextRequest) {
         }
 
         const payload = await getPayload({ config });
+        const siteOrigin = siteOriginFromRequest(req);
 
         // Filtros base para negocios
         const where: Where = {
@@ -130,10 +149,17 @@ export async function GET(req: NextRequest) {
             })
             .map((product) => product.business);
 
+        type BusinessDoc = (typeof businessesResult.docs)[number];
+        const businessesFromProductDocs = businessesFromProducts.filter(
+            (b): b is BusinessDoc => typeof b === "object" && b !== null
+        );
         const businesses = [
             ...businessesByName,
-            ...businessesFromProducts,
-        ];
+            ...businessesFromProductDocs,
+        ].map((b) => ({
+            ...b,
+            coverImage: jsonCover(b.coverImage, siteOrigin),
+        })) as typeof businessesResult.docs;
 
         const products = filteredProductDocs
             .sort((a, b) => {
@@ -153,10 +179,7 @@ export async function GET(req: NextRequest) {
                     id: product.id,
                     name: product.name,
                     price: product.price,
-                    image:
-                        product.image && typeof product.image === "object"
-                            ? { url: product.image.url ?? null }
-                            : null,
+                    image: jsonImage(product.image, siteOrigin),
                     business: {
                         id: b.id,
                         name: b.name,
@@ -185,7 +208,10 @@ export async function GET(req: NextRequest) {
                 .filter((x) => x.score >= MIN_RELATED_SCORE)
                 .sort((a, b) => b.score - a.score)
                 .slice(0, MAX_RELATED)
-                .map((x) => x.doc);
+                .map((x) => ({
+                    ...x.doc,
+                    coverImage: jsonCover(x.doc.coverImage, siteOrigin),
+                })) as typeof businessesResult.docs;
 
             const productCandidates = productsResult.docs.filter((product) => {
                 const business = product.business;
@@ -222,10 +248,7 @@ export async function GET(req: NextRequest) {
                         id: product.id,
                         name: product.name,
                         price: product.price,
-                        image:
-                            product.image && typeof product.image === "object"
-                                ? { url: product.image.url ?? null }
-                                : null,
+                        image: jsonImage(product.image, siteOrigin),
                         business: {
                             id: b.id,
                             name: b.name,
