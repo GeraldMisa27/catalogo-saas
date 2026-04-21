@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { uploadMediaForProduct } from "@/lib/uploadMediaClient";
+import {
+  uploadMediaForProduct,
+  uploadMediaFromUrlForProduct,
+} from "@/lib/uploadMediaClient";
 
 export default function NewProductForm({ businessId }: { businessId: string }) {
   const router = useRouter();
@@ -15,6 +18,7 @@ export default function NewProductForm({ businessId }: { businessId: string }) {
     order: "0",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,6 +31,7 @@ export default function NewProductForm({ businessId }: { businessId: string }) {
       return;
     }
     setImageFile(file);
+    setImageUrl("");
     setImagePreview(URL.createObjectURL(file));
   }
 
@@ -37,9 +42,11 @@ export default function NewProductForm({ businessId }: { businessId: string }) {
 
     try {
       let imageId: string | undefined;
+      const alt = form.name.trim() || "Producto";
       if (imageFile) {
-        const alt = form.name.trim() || "Producto";
         imageId = await uploadMediaForProduct(imageFile, alt);
+      } else if (imageUrl.trim()) {
+        imageId = await uploadMediaFromUrlForProduct(imageUrl, alt);
       }
 
       const body: Record<string, unknown> = {
@@ -95,12 +102,38 @@ export default function NewProductForm({ businessId }: { businessId: string }) {
             <p className="text-xs text-gray-500">
               Opcional. Formatos de imagen habituales (JPG, PNG, WebP).
             </p>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                if (e.target.value.trim()) {
+                  setImageFile(null);
+                  setImagePreview(null);
+                }
+              }}
+              placeholder="https://ejemplo.com/imagen.jpg"
+              className="rounded-xl bg-gray-800 px-4 py-2 text-sm text-white placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <p className="text-xs text-gray-500">
+              O pega una URL pública de imagen (si no eliges archivo local).
+            </p>
             {imagePreview && (
               <div className="relative mt-2 aspect-video w-full max-h-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imagePreview}
                   alt="Vista previa"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            )}
+            {!imagePreview && imageUrl.trim() && (
+              <div className="relative mt-2 aspect-video w-full max-h-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt="Vista previa URL"
                   className="h-full w-full object-contain"
                 />
               </div>

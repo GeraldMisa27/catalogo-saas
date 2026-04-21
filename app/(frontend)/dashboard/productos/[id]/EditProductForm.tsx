@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { uploadMediaForProduct } from "@/lib/uploadMediaClient";
+import {
+  uploadMediaForProduct,
+  uploadMediaFromUrlForProduct,
+} from "@/lib/uploadMediaClient";
 
 type InitialForm = {
   name: string;
@@ -25,6 +28,7 @@ export default function EditProductForm({
   const router = useRouter();
   const [form, setForm] = useState<InitialForm>(initial);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,6 +45,7 @@ export default function EditProductForm({
       return;
     }
     setImageFile(file);
+    setImageUrl("");
     setImagePreview(URL.createObjectURL(file));
   }
 
@@ -51,10 +56,12 @@ export default function EditProductForm({
 
     try {
       let image: string | null | undefined;
+      const alt = form.name.trim() || "Producto";
 
       if (imageFile) {
-        const alt = form.name.trim() || "Producto";
         image = await uploadMediaForProduct(imageFile, alt);
+      } else if (imageUrl.trim()) {
+        image = await uploadMediaFromUrlForProduct(imageUrl, alt);
       } else if (removeImage) {
         image = null;
       }
@@ -108,6 +115,23 @@ export default function EditProductForm({
               onChange={onImageChange}
               className="text-sm text-gray-300 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-indigo-500"
             />
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => {
+                setImageUrl(e.target.value);
+                if (e.target.value.trim()) {
+                  setImageFile(null);
+                  setImagePreview(null);
+                  setRemoveImage(false);
+                }
+              }}
+              placeholder="https://ejemplo.com/imagen.jpg"
+              className="rounded-xl bg-gray-800 px-4 py-2 text-sm text-white placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <p className="text-xs text-gray-500">
+              Puedes elegir archivo local o pegar URL pública de imagen.
+            </p>
             {initialImageUrl && !imageFile && (
               <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-400">
                 <input
@@ -133,6 +157,16 @@ export default function EditProductForm({
                   alt=""
                   className="h-full w-full object-contain"
                   referrerPolicy="no-referrer"
+                />
+              </div>
+            )}
+            {!displayUrl && imageUrl.trim() && (
+              <div className="relative mt-2 aspect-video w-full max-h-48 overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="h-full w-full object-contain"
                 />
               </div>
             )}

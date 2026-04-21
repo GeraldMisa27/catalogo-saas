@@ -27,3 +27,34 @@ export async function uploadMediaForProduct(file: File, alt: string): Promise<st
   const altText = alt.trim() || "Imagen de producto";
   return createMediaDoc(file, altText);
 }
+
+export async function uploadMediaFromUrlForProduct(
+  imageUrl: string,
+  alt: string
+): Promise<string> {
+  const trimmedUrl = imageUrl.trim();
+  if (!trimmedUrl) {
+    throw new Error("La URL de imagen está vacía.");
+  }
+
+  let remote: Response;
+  try {
+    remote = await fetch(trimmedUrl);
+  } catch {
+    throw new Error("No se pudo descargar la imagen desde la URL indicada.");
+  }
+
+  if (!remote.ok) {
+    throw new Error("La URL de imagen no respondió correctamente.");
+  }
+
+  const blob = await remote.blob();
+  const contentType = blob.type || "image/jpeg";
+  const extFromType = contentType.split("/")[1] || "jpg";
+
+  const file = new File([blob], `remote-image.${extFromType}`, {
+    type: contentType,
+  });
+
+  return uploadMediaForProduct(file, alt);
+}
