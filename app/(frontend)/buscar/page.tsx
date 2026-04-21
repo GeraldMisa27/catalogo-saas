@@ -60,7 +60,7 @@ async function getSearchResults({
             ? `${protocol}://${host}`
             : (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
 
-        const res = await fetch(`${baseURL}/api/businesses${query ? `?${query}` : ""}`, {
+        const res = await fetch(`${baseURL}/api/businesses-search${query ? `?${query}` : ""}`, {
             cache: "no-store",
         });
         const { data } = await res.json();
