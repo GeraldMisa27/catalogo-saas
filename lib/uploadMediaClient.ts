@@ -1,27 +1,4 @@
-/**
- * Subida compatible con @payloadcms/storage-uploadthing en Vercel:
- * 1) Sube el archivo con el cliente de UploadThing al endpoint de Payload.
- * 2) Crea el documento en `media` con multipart (_payload + file como JSON), como el admin.
- *
- * Solo usar en componentes cliente (`"use client"`).
- */
-import { genUploader } from "uploadthing/client";
-
-/**
- * Ruta registrada por `initClientUploads` en @payloadcms/storage-uploadthing.
- * Debe alinearse con `routes.api` (por defecto `/api`).
- */
-const STORAGE_CLIENT_UPLOAD_URL =
-  "/api/storage-uploadthing-client-upload-route?collectionSlug=media";
-
-function parsePayloadError(data: unknown): string {
-  if (!data || typeof data !== "object") return "Error al subir la imagen";
-  const d = data as {
-    errors?: { message?: string }[];
-    message?: string;
-  };
-  return d.errors?.[0]?.message ?? d.message ?? "Error al subir la imagen";
-}
+"use client";
 
 export async function uploadMediaForProduct(
   file: File,
@@ -29,41 +6,9 @@ export async function uploadMediaForProduct(
 ): Promise<string> {
   const altText = alt.trim() || "Imagen de producto";
 
-  const { uploadFiles } = genUploader({
-    package: "storage-uploadthing",
-    url: STORAGE_CLIENT_UPLOAD_URL,
-  });
-
-  const ut = await uploadFiles("uploader", { files: [file] });
-  console.log("[uploadthing] raw response:", JSON.stringify(ut[0]));
-  
-  const utFile = ut[0] as
-    | {
-        key?: string;
-        fileKey?: string;
-        url?: string;
-      }
-    | undefined;
-  
-  const keyFromUrl = utFile?.url?.split("/f/")[1] ?? null;
-  const key = utFile?.key ?? utFile?.fileKey ?? keyFromUrl ?? null;
-  
-  if (!key) {
-    console.error("[uploadthing] no key found in:", utFile);
-    throw new Error("UploadThing no devolvió clave de archivo.");
-  }
-
-  const fileMeta = JSON.stringify({
-    clientUploadContext: { key },
-    collectionSlug: "media",
-    filename: file.name,
-    mimeType: file.type || "application/octet-stream",
-    size: file.size,
-  });
-
   const formData = new FormData();
   formData.append("_payload", JSON.stringify({ alt: altText }));
-  formData.append("file", fileMeta);
+  formData.append("file", file, file.name);
 
   const res = await fetch("/api/media", {
     method: "POST",
@@ -73,7 +18,10 @@ export async function uploadMediaForProduct(
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(parsePayloadError(data));
+    const d = data as { errors?: { message?: string }[]; message?: string };
+    throw new Error(
+      d.errors?.[0]?.message ?? d.message ?? "Error al subir la imagen"
+    );
   }
 
   const data = (await res.json()) as { doc?: { id: string }; id?: string };
