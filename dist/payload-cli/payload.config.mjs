@@ -255,6 +255,24 @@ var Articles = {
 };
 
 // collections/Businesses.ts
+var revalidateBusinessCache = async ({ doc }) => {
+  try {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/revalidate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secret: process.env.REVALIDATE_SECRET,
+          collection: "businesses",
+          slug: doc.slug
+        })
+      }
+    );
+  } catch (err) {
+    console.error("[revalidate hook]", err);
+  }
+};
 var Businesses = {
   slug: "businesses",
   admin: {
@@ -270,6 +288,9 @@ var Businesses = {
         status: { equals: "active" }
       };
     }
+  },
+  hooks: {
+    afterChange: [revalidateBusinessCache]
   },
   fields: [
     // ── Información básica ──────────────────────────────
@@ -546,8 +567,14 @@ var payload_config_default = buildConfig({
   sharp,
   plugins: [
     uploadthingStorage({
+      // En Vercel el cuerpo de la petición al servidor está limitado (~4.5MB);
+      // las subidas van al cliente → UploadThing y luego se registra el doc en Payload.
+      clientUploads: true,
       collections: {
-        media: true
+        // Expone URLs públicas https://utfs.io/f/... en el campo `url` (afterRead).
+        // Sin esto, `url` suele ser /api/media/file/... y `next/image` (/_next/image)
+        // puede devolver 404 al optimizar en Vercel.
+        media: { disablePayloadAccessControl: true }
       },
       options: {
         token: process.env.UPLOADTHING_TOKEN,

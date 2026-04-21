@@ -35,9 +35,22 @@ export async function uploadMediaForProduct(
   });
 
   const ut = await uploadFiles("uploader", { files: [file] });
-  const key = ut[0]?.key;
+  console.log("[uploadthing] raw response:", JSON.stringify(ut[0]));
+  
+  const utFile = ut[0] as
+    | {
+        key?: string;
+        fileKey?: string;
+        url?: string;
+      }
+    | undefined;
+  
+  const keyFromUrl = utFile?.url?.split("/f/")[1] ?? null;
+  const key = utFile?.key ?? utFile?.fileKey ?? keyFromUrl ?? null;
+  
   if (!key) {
-    throw new Error("UploadThing no devolvió una clave de archivo. Revisa UPLOADTHING_TOKEN.");
+    console.error("[uploadthing] no key found in:", utFile);
+    throw new Error("UploadThing no devolvió clave de archivo.");
   }
 
   const fileMeta = JSON.stringify({
