@@ -110,6 +110,7 @@ export default async function BusinessPage({
                             fill
                             className="object-cover"
                             priority
+                            unoptimized
                         />
                     )}
             </div>
@@ -130,6 +131,7 @@ export default async function BusinessPage({
                                     className="object-cover"
                                     priority  // precarga como recurso crítico — mejora LCP
                                     sizes="100vw"
+                                    unoptimized
                                 />
                             )}
                     </div>
@@ -261,6 +263,7 @@ export default async function BusinessPage({
                                                             height={64}
                                                             className="h-full w-full object-cover"
                                                             sizes="64px"
+                                                            unoptimized
                                                         />
                                                     </div>
                                                 )}

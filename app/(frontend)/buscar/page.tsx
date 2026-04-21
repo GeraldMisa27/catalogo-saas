@@ -209,6 +209,7 @@ export default async function SearchPage({
                                                 fill
                                                 className="object-cover"
                                                 sizes="64px"
+                                                unoptimized
                                             />
                                         ) : null}
                                     </div>
@@ -256,6 +257,7 @@ export default async function SearchPage({
                                                             fill
                                                             className="object-cover"
                                                             sizes="64px"
+                                                            unoptimized
                                                         />
                                                     ) : null}
                                                 </div>
@@ -296,6 +298,7 @@ export default async function SearchPage({
                                                                 fill
                                                                 className="object-cover"
                                                                 sizes="(max-width: 768px) 100vw, 33vw"
+                                                                unoptimized
                                                             />
                                                         )}
                                                     </div>
@@ -341,6 +344,7 @@ export default async function SearchPage({
                                                 fill
                                                 className="object-cover"
                                                 sizes="(max-width: 768px) 100vw, 33vw"
+                                                unoptimized
                                             />
                                         )}
                                     </div>
