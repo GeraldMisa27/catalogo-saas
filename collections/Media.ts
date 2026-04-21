@@ -2,6 +2,9 @@ import type { CollectionConfig } from 'payload'
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  admin: {
+    useAsTitle: 'alt',
+  },
   access: {
     read: () => true,
   },
@@ -12,5 +15,16 @@ export const Media: CollectionConfig = {
       required: true,
     },
   ],
-  upload: true,
+  upload: {
+    // Hace que el admin de Payload tenga una miniatura consistente.
+    adminThumbnail: 'thumb',
+    imageSizes: [
+      {
+        name: 'thumb',
+        width: 320,
+        height: 320,
+        fit: 'cover',
+      },
+    ],
+  },
 }
