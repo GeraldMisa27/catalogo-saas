@@ -8,14 +8,6 @@ import { NextRequest } from "next/server";
 
 const CACHE_TTL = 300;
 
-function siteOriginFromRequest(req: NextRequest): string {
-    const proto = req.headers.get("x-forwarded-proto") ?? "https";
-    const host =
-        req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
-    if (host) return `${proto}://${host}`;
-    return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
-}
-
 function jsonImage(media: unknown, siteOrigin: string): { url: string } | null {
     const url = getMediaDisplayUrl(media, siteOrigin);
     return url ? { url } : null;
@@ -45,7 +37,7 @@ export async function GET(req: NextRequest) {
         }
 
         const payload = await getPayload({ config });
-        const siteOrigin = siteOriginFromRequest(req);
+        const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
 
         // Filtros base para negocios
         const where: Where = {
